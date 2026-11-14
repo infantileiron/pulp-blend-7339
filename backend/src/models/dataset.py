@@ -7,3 +7,4 @@ class PulpDataset(RecordMixin,Base):
  name:Mapped[str]=mapped_column(String(180),unique=True)
  materials:Mapped[list]=mapped_column(JSON)
  description:Mapped[str]=mapped_column(Text,default="")
+ revision:Mapped[int]=mapped_column(default=1)

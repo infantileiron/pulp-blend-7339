@@ -1,1 +1,1 @@
-import {request} from "./client";export const fetchDatasets=()=>request("/datasets");export const createDatasets=(body:unknown)=>request("/datasets","POST",body);
+import {request} from "./client";export const fetchDatasets=()=>request("/datasets");export const createDatasets=(body:unknown)=>request("/datasets","POST",body);export const correctDataset=(id:string,body:unknown)=>request("/datasets/"+id+"/corrections","POST",body);

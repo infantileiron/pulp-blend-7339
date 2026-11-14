@@ -30,7 +30,7 @@ docker compose exec -T backend python -m scripts.seed_demo
 
 五服务恰好frontend/backend/worker/db/redis，全部healthcheck，数据库/Redis/共享产物具名卷。清理 `docker compose down -v --remove-orphans`；保留数据时省略 `-v`。
 
-结构：`backend/src/{models,schemas,services,controllers,routes}`按六实体分层，`services/materials.py`校验CSV，`linear_blend.py`求名义配方，`lhs_robustness.py`构造LHS并评价固定配方；`config,utils,middlewares`提供配置/数据库/认证/队列/审计/错误。种子 `backend/scripts/seed_demo.py`；`migrations/001_schema.sql`说明新库基线，实际启动以元数据建表。前端 `src/{api,stores,types,constants,hooks,utils,router,pages}`；RecipeBars、QualityTable、SampleCloud用于总览/结果/归档。测试、日志、截图在批次外层 `test-artifacts/gb-2306`，不放本源码目录。
+结构：`backend/src/{models,schemas,services,controllers,routes}`按六实体分层，`services/materials.py`校验CSV，`linear_blend.py`求名义配方，`lhs_robustness.py`构造LHS并评价固定配方；`config,utils,middlewares`提供配置/数据库/认证/队列/审计/错误。种子 `backend/scripts/seed_demo.py`；`migrations/`说明新库基线与存量库的更正版本化ALTER，实际启动以元数据建表。前端 `src/{api,stores,types,constants,hooks,utils,router,pages}`；RecipeBars、QualityTable、SampleCloud用于总览/结果/归档。乱序、重放、并发与情景隔离的单元测试在 `backend/tests`（`pip install -r requirements-dev.txt` 后从backend运行 `python -m pytest tests/`）；批次级测试、日志、截图在外层 `test-artifacts/gb-2306`。
 
 本地开发：安装requirements并设置可用DATABASE_URL/REDIS_URL，从backend运行 `uvicorn src.main:app --reload`，另起 `python -m src.worker`；前端 `npm ci && npm run dev`，构建 `npm run build`。默认OpenBLAS/OMP线程1，避免小型试算占满主机。
 
@@ -58,7 +58,11 @@ docker compose exec -T backend python -m scripts.seed_demo
 
 cost为元/吨，正且≤1e6；min_share/max_share为0至1的比例且下界≤上界。强度为0至100的**模拟指数**，白度为0至100%，回收纤维率为0至1。每个width为对应单位的非负±幅度，中心±幅度必须完整落在物理范围，成本下界严格正。不会截断抽样值来掩盖非法区间。重复ID、缺失/非有限数、非法区间拒绝；总供给或质量冲突留给求解器返回不可行。
 
-规格六个上下界必须有序且在上述物理范围。每个情景20至2000个LHS样本、非负整数seed，成本扰动开关独立保存。
+规格六个上下界必须有序且在上述物理范围。每个情景20至2000个LHS样本、非负整数seed，成本扰动开关独立保存；建立情景时固定当时的批次修订号与完整原浆快照，后续更正不影响已建情景的试算。
+
+## 带版本的检测/报价补发更正
+
+检测或报价更正不再整批重建：`POST /datasets/{id}/corrections` 接收更正CSV，首列 `material_id,version`，其余为可更正数值列（成本、供给上下限、三属性及各自幅度），空单元格表示该项不变。每种原浆按各自版本号裁决：新版更新，旧版与同值重放忽略，同版异值整批拒绝（409并给出冲突原因）；未知原浆、非整数版本、非法数值或合并后越出物理范围的行使整批拒绝（422），坏行不留下部分更新。并发更正按同一版本口径裁决，以批次修订号做乐观并发控制，落选方重读后重新裁决。每应用一批更正，批次修订号revision加一；全部忽略时不前进。原浆页显示批次修订、每种原浆版本、更正处理计数（应用/旧版忽略/重放忽略/拒绝）与冲突原因。整批CSV导入保持不变，导入即版本1。
 
 ## 两个真实Python算法
 

@@ -10,3 +10,5 @@ class BlendScenario(RecordMixin,Base):
  n_samples:Mapped[int]
  seed:Mapped[int]
  perturb_cost:Mapped[bool]
+ dataset_revision:Mapped[int]=mapped_column(default=1)
+ materials_snapshot:Mapped[list]=mapped_column(JSON,default=list)

@@ -5,3 +5,5 @@ class DatasetCreate(BaseModel):
  description:str=Field(default="",max_length=2000)
 class DatasetEdit(BaseModel):
  description:str=Field(max_length=2000)
+class DatasetCorrect(BaseModel):
+ csv_text:str=Field(min_length=10,max_length=200000)

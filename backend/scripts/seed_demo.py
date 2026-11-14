@@ -15,10 +15,10 @@ def seed():
   for role in ["admin","analyst","viewer"]:
    email=role+"@pulp.demo"
    if not db.scalar(select(User).where(User.email==email)):db.add(User(id="user-"+role,email=email,role=role,password_hash=hash_password("PulpDemo2026!")))
-  if not db.get(PulpDataset,"demo-dataset"):db.add(PulpDataset(id="demo-dataset",name="岑岳十一月原浆报价与检测",materials=make_materials(),description="8种模拟原浆；文件cenyue_pulp_202611.csv；属性仅按声明线性混合"))
+  if not db.get(PulpDataset,"demo-dataset"):db.add(PulpDataset(id="demo-dataset",name="岑岳十一月原浆报价与检测",materials=[dict(m,version=1) for m in make_materials()],description="8种模拟原浆；文件cenyue_pulp_202611.csv；属性仅按声明线性混合",revision=1))
   if not db.get(QualitySpec,"demo-spec"):db.add(QualitySpec(id="demo-spec",name="文化用纸模拟质量窗口",strength_min=70,strength_max=100,whiteness_min=80,whiteness_max=100,recycled_min=.25,recycled_max=1,description="强度指数、白度%、回收纤维率分别限定；不作工业认证"))
   db.commit()
-  if not db.get(BlendScenario,"demo-scenario"):db.add(BlendScenario(id="demo-scenario",name="名义低成本与固定配方扰动",dataset_id="demo-dataset",spec_id="demo-spec",n_samples=400,seed=20261112,perturb_cost=True))
+  if not db.get(BlendScenario,"demo-scenario"):db.add(BlendScenario(id="demo-scenario",name="名义低成本与固定配方扰动",dataset_id="demo-dataset",spec_id="demo-spec",n_samples=400,seed=20261112,perturb_cost=True,dataset_revision=1,materials_snapshot=[dict(m,version=1) for m in make_materials()]))
   db.commit()
   if not db.get(BlendRun,"demo-run"):db.add(BlendRun(id="demo-run",scenario_id="demo-scenario",status="queued",result={},error=""));db.commit();compute(db,"demo-run")
   if not db.get(FormulaReview,"demo-review"):db.add(FormulaReview(id="demo-review",run_id="demo-run",action="核查名义最优配方的活跃质量约束，并观察固定配方扰动通过数；线性混合和独立均匀误差仅为模拟假设。",state="approved",reviewer="admin@pulp.demo"))

@@ -23,8 +23,9 @@ def compute(db,run_id):
  row.status="running";db.commit()
  try:
   scenario=db.get(BlendScenario,row.scenario_id);data=db.get(PulpDataset,scenario.dataset_id);spec_row=db.get(QualitySpec,scenario.spec_id)
-  spec={key+"_"+side:getattr(spec_row,key+"_"+side) for key in PROPERTIES for side in ["min","max"]};lp=solve(data.materials,spec)
-  robust=simulate(data.materials,[r["share"] for r in lp["shares"]],spec,scenario.n_samples,scenario.seed,scenario.perturb_cost) if lp["feasible"] else None
-  row.result={"dataset_name":data.name,"spec_name":spec_row.name,"scenario_name":scenario.name,"spec":spec,"lp":lp,"robustness":robust,"materials":data.materials,"cost_unit":"CNY/tonne","property_units":{"strength":"模拟强度指数","whiteness":"%","recycled":"fraction"}};row.status="completed" if lp["feasible"] else "infeasible"
+  materials=scenario.materials_snapshot or data.materials
+  spec={key+"_"+side:getattr(spec_row,key+"_"+side) for key in PROPERTIES for side in ["min","max"]};lp=solve(materials,spec)
+  robust=simulate(materials,[r["share"] for r in lp["shares"]],spec,scenario.n_samples,scenario.seed,scenario.perturb_cost) if lp["feasible"] else None
+  row.result={"dataset_name":data.name,"dataset_revision":scenario.dataset_revision,"spec_name":spec_row.name,"scenario_name":scenario.name,"spec":spec,"lp":lp,"robustness":robust,"materials":materials,"cost_unit":"CNY/tonne","property_units":{"strength":"模拟强度指数","whiteness":"%","recycled":"fraction"}};row.status="completed" if lp["feasible"] else "infeasible"
  except Exception as e:row.status="failed";row.error=str(e)[:1000]
  db.commit()
